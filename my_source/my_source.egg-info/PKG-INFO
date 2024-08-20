@@ -1,0 +1,9 @@
+Metadata-Version: 1.2
+Name: my-source
+Version: 0.1
+Summary: A package for mathematical and fitting functions
+Home-page: UNKNOWN
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.6

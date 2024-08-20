@@ -1,6 +1,7 @@
 # Mat_belle
 
 [Ссылка на структуру данных](https://belle.kek.jp/~hastings/secured/pantherdoc/b20030807_1600/)
+[Ссылка на FEI AI](https://software.belle2.org/development/sphinx/online_book/basf2/fei.html#full-event-interpretation)
 ## Первый эксперимент
 
 Сбор данных:
