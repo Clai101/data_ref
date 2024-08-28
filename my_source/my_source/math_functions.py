@@ -21,7 +21,7 @@ def eval_chebyt(n, x):
 @njit(fastmath=True)
 def gaussian(x, mu, sigma):
     sigma2 = np.power(sigma, 2)
-    return np.power(sigma2 * 2 * np.pi, -2) * np.exp(-np.power(x - mu, 2) / (2 * sigma2))
+    return np.power(sigma2 * 2 * np.pi, -1/2) * np.exp(-np.power(x - mu, 2) / (2 * sigma2))
 
 @njit(fastmath=True)
 def heaviside(x, d):
@@ -56,5 +56,5 @@ def exponential_distribution(x, lam, a=0, b=0):
     if a == 0 and b == 0:
         normalization_factor = 1
     else:
-        normalization_factor = lam / (np.exp(lam * a) - np.exp(lam * b))
+        normalization_factor = -lam / (np.exp(-lam * a) - np.exp(-lam * b))
     return normalization_factor * np.exp(-lam * x)

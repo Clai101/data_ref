@@ -1,8 +1,10 @@
-root
-hist
-root_mc
-hist_mc
+root/
+hist/
+root_mc/
+hist_mc/
 *.d
 *.root
 *.hist
 *.o
+myenv/
+scipy_extra/
