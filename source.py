@@ -6,6 +6,21 @@ import matplotlib.pyplot as plt
 import os
 from numba import njit
 
+SMALL_SIZE = 12
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 20
+
+
+plt.rc('font', size=SMALL_SIZE)
+plt.rc('axes', titlesize=SMALL_SIZE)
+plt.rc('axes', labelsize=BIGGER_SIZE)
+plt.rc('xtick', labelsize=SMALL_SIZE)
+plt.rc('ytick', labelsize=SMALL_SIZE)
+plt.rc('legend', fontsize=SMALL_SIZE)
+plt.rc('figure', titlesize=BIGGER_SIZE) 
+plt.rcParams['axes.titlesize'] = 22 
+plt.rcParams['figure.constrained_layout.use'] = True
+
 Lamc_m = 2.28646
 Lamc_25_m = 2.5925
 Lamc_26_m = 2.628
@@ -14,6 +29,7 @@ D_st_p_m = 2.01026
 D_st_0_m = 2.00685
 Pi_p_m = 0.13957
 Pi_0_m = 0.13498
+Ds_D_dif = 0.142014
 K_s_m = 0.497611
 K_p_m = 0.493677
 
@@ -21,19 +37,35 @@ x = np.array([1. , 2. ])
 n = np.array([1, 2])
 
 @njit(fastmath = True)
-def eval_chebyt(n, x):
+def eval_chebyt(n, x, a = 0, b = 0):
+    if a == b:
+        norm = 1
+    else:
+        if n == 0:
+            norm = b - a
+        elif n == 1:
+            norm = (b**2 - a**2) / 2
+        elif n == 2:
+            norm = (2 * (b**3 - a**3) / 3 - (b - a)) / 2
+        elif n == 3:
+            norm = (4 * (b**4 - a**4) / 4 - 3 * (b**2 - a**2) / 2) / 4
+        elif n == 4:
+            norm = (8 * (b**5 - a**5) / 5 - 8 * (b**3 - a**3) / 3 + (b - a)) / 8
+        elif n == 5:
+            norm = (16 * (b**6 - a**6) / 6 - 20 * (b**4 - a**4) / 4 + 5 * (b**2 - a**2) / 2) / 16
+
     if n == 0:
-        return np.ones_like(x)
+        return np.ones_like(x)/norm
     elif n == 1:
-        return x
+        return x/norm
     elif n == 2:
-        return 2 * np.power(x, 2) - 1
+        return (2 * np.power(x, 2) - 1)/norm
     elif n == 3:
-        return 4 * np.power(x, 3) - 3 * x
+        return (4 * np.power(x, 3) - 3 * x)/norm
     elif n == 4:
-        return 8 * np.power(x, 4) - 8 * np.power(x, 2) + 1
+        return (8 * np.power(x, 4) - 8 * np.power(x, 2) + 1)//norm
     elif n == 5:
-        return 16 * np.power(x, 5) - 20 * np.power(x, 3) + 5 * x
+        return (16 * np.power(x, 5) - 20 * np.power(x, 3) + 5 * x)//norm
 
 eval_chebyt(1, x)
 
@@ -84,12 +116,13 @@ puasson(x, n)
 
 
 @njit(fastmath=True)
-def exponential_distribution(x, lam, a=0, b=0):
-    if a == 0 and b == 0:
+def exp_dis(x, lam, a=0, b=0):
+    if a == b:
         normalization_factor = 1
     else:
-        normalization_factor = -lam / (np.exp(-lam * a) - np.exp(-lam * b))
-    return normalization_factor * np.exp(-lam * x)
+        normalization_factor = lam / (np.exp(lam * (b)) - np.exp(lam * (a)))
+    return normalization_factor * np.exp(lam * x)
+    
 
 
 
@@ -119,46 +152,33 @@ def max_bin_lik(f, bin_centers, counts, args0, des = False, norm = False, h = 1e
     return rez.x, normf
 
 
-from matplotlib.axes import Axes
+#class CustomedAxes(Axes):
+#    def errorhist(self, data, bins=10, fmt='.', color='dimgrey', err_func = np.sqrt, **kwargs):
+#        counts, bin_edges = np.histogram(data, bins=bins, **kwargs)
+#        bin_centers = bin_edges[:-1] + (bin_edges[1] - bin_edges[0]) / 2
+#        self.errorbar(bin_centers, counts, yerr=err_func(counts), fmt=fmt, color=color, **kwargs)
+#        return counts, bin_centers
+#
+#__subplot = plt.subplots
+#
+#def subplots(nrows=1, ncols=1, **kwargs):
+#    fig, axes = __subplot(nrows=nrows, ncols=ncols, layout='constrained', **kwargs)
+#    if isinstance(axes, np.ndarray):
+#        custom_axes = []
+#        for ax in axes.flat:
+#            position = ax.get_position()
+#            ax.remove() 
+#            custom_ax = CustomedAxes(fig, position)
+#            fig.add_axes(custom_ax)
+#            custom_axes.append(custom_ax)
+#        custom_axes = np.array(custom_axes).reshape(axes.shape)
+#    else:
+#        position = axes.get_position()
+#        axes.remove()
+#        custom_axes = CustomedAxes(fig, position)
+#        fig.add_axes(custom_axes)
+#    return fig, custom_axes
+#
+#plt.subplots = subplots
 
-class CustomedAxes(Axes):
-    def errorhist(self, data, bins=10, fmt='.', color='dimgrey', err_func = np.sqrt, **kwargs):
-        counts, bin_edges = np.histogram(data, bins=bins, **kwargs)
-        bin_centers = bin_edges[:-1] + (bin_edges[1] - bin_edges[0]) / 2
-        self.errorbar(bin_centers, counts, yerr=err_func(counts), fmt=fmt, color=color, capsize=5, **kwargs)
-        return counts, bin_centers
 
-__subplot = plt.subplots
-
-def subplots(nrows=1, ncols=1, **kwargs):
-    fig, axes = __subplot(nrows=nrows, ncols=ncols, **kwargs)
-    if isinstance(axes, np.ndarray):
-        custom_axes = []
-        for ax in axes.flat:
-            position = ax.get_position()
-            ax.remove() 
-            custom_ax = CustomedAxes(fig, position)
-            fig.add_axes(custom_ax)
-            custom_axes.append(custom_ax)
-        custom_axes = np.array(custom_axes).reshape(axes.shape)
-    else:
-        position = axes.get_position()
-        axes.remove()
-        custom_axes = CustomedAxes(fig, position)
-        fig.add_axes(custom_axes)
-    return fig, custom_axes
-
-plt.subplots = subplots
-
-SMALL_SIZE = 12
-MEDIUM_SIZE = 16
-BIGGER_SIZE = 20
-
-plt.rc('font', size=SMALL_SIZE)
-plt.rc('axes', titlesize=SMALL_SIZE)
-plt.rc('axes', labelsize=BIGGER_SIZE)
-plt.rc('xtick', labelsize=SMALL_SIZE)
-plt.rc('ytick', labelsize=SMALL_SIZE)
-plt.rc('legend', fontsize=SMALL_SIZE)
-plt.rc('figure', titlesize=BIGGER_SIZE) 
-plt.rcParams['axes.titlesize'] = 22 
