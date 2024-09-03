@@ -5,6 +5,8 @@ from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 import os
 from numba import njit
+from iminuit import Minuit
+from iminuit.cost import UnbinnedNLL
 
 SMALL_SIZE = 12
 MEDIUM_SIZE = 16
@@ -137,20 +139,40 @@ def rm(fname):
     else:
         print("The file does not exist") 
 
-def max_bin_lik(f, bin_centers, counts, args0, des = False, norm = False, h = 1e-7, bounds = None, normm = None, method='SLSQP'):
-    likelihoodn = lambda x, n, norm, *args: np.log(puasson(f(x, *args)/norm, n))
-    dx = bin_centers[1] - bin_centers[0]
-    counts = counts/np.sum(counts)*dx
-    def df(args0, bin_centers, counts): 
-        normf = np.sum(f(bin_centers, *args0))*dx
-        return -np.sum(likelihoodn(bin_centers, counts, normf, *args0))
-    rez = minimize(df, args0, args=(bin_centers, counts), method = method, options={'xatol': h, 'fatol': h}, bounds=bounds)
-    normf = np.sum(f(bin_centers, *rez.x))*dx
-    print(rez)
-    if normm == None:
-        return rez.x, normf
-    return rez.x, normf
+from iminuit import Minuit
 
+def max_bin_lik(f, bin_centers, counts, args0, des=False, norm=False, h=1e-7, bounds=None, normm=None, method='SLSQP'):
+    # Poisson likelihood function
+    def likelihoodn(x, n, norm, *args):
+        return np.log(puasson(f(x, *args) / norm, n))
+    
+    # Normalize counts
+    dx = bin_centers[1] - bin_centers[0]
+    counts = counts / np.sum(counts) * dx
+    
+    # Define the negative log-likelihood function
+    def df(*args0):
+        normf = np.sum(f(bin_centers, *args0)) * dx
+        return -np.sum(likelihoodn(bin_centers, counts, normf, *args0))
+    
+    # Initialize Minuit
+    minuit = Minuit(df, *args0)
+    if bounds != None:
+        minuit.limits = bounds
+    
+    # Perform the minimization
+    minuit.migrad()
+    
+    # Extract the results
+    rez = minuit.values
+    normf = np.sum(f(bin_centers, *rez)) * dx  # Note the change to `*rez` instead of `*rez.x`
+    
+    print(rez)
+    
+    # Return the parameters and normalization factor
+    if normm is None:
+        return rez, normf
+    return rez, normf
 
 #class CustomedAxes(Axes):
 #    def errorhist(self, data, bins=10, fmt='.', color='dimgrey', err_func = np.sqrt, **kwargs):
