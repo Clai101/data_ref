@@ -1,0 +1,12 @@
+root/
+hist/
+root_mc/
+hist_mc/
+*.d
+*.root
+*.hist
+*.o
+**/*.csv
+*.csv
+myenv/
+scipy_extra/
